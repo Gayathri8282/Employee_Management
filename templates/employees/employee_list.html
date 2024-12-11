@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+    <!-- Header with Total Count and Create Button -->
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-bold">Total Count: {{ employees|length }}</h2>
+        <a href="{% url 'employee_create' %}" 
+           class="bg-green-500 text-white px-4 py-2 rounded">
+            Create Employee
+        </a>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="mb-4">
+        <form method="get" class="flex justify-end">
+            <label class="mr-2 self-center">Search</label>
+            <input type="text" 
+                   name="search"
+                   value="{{ search_query }}"
+                   placeholder="Enter Search Keyword"
+                   class="border rounded px-2 py-1 w-64">
+        </form>
+    </div>
+
+    <!-- Employee Table -->
+    <table class="min-w-full bg-white border">
+        <thead>
+            <tr class="bg-gray-100">
+                <th class="border px-4 py-2">Unique Id</th>
+                <th class="border px-4 py-2">Image</th>
+                <th class="border px-4 py-2">Name</th>
+                <th class="border px-4 py-2">Email</th>
+                <th class="border px-4 py-2">Mobile No</th>
+                <th class="border px-4 py-2">Designation</th>
+                <th class="border px-4 py-2">Gender</th>
+                <th class="border px-4 py-2">Course</th>
+                <th class="border px-4 py-2">Create date</th>
+                <th class="border px-4 py-2">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for employee in employees %}
+            <tr>
+                <td class="border px-4 py-2">{{ employee.id }}</td>
+                <td class="border px-4 py-2">
+                    {% if employee.image %}
+                        <img src="{{ employee.image.url }}" alt="Employee" class="h-10 w-10">
+                    {% endif %}
+                </td>
+                <td class="border px-4 py-2">{{ employee.name }}</td>
+                <td class="border px-4 py-2">
+                    <a href="mailto:{{ employee.email }}" class="text-blue-500">{{ employee.email }}</a>
+                </td>
+                <td class="border px-4 py-2">{{ employee.mobile }}</td>
+                <td class="border px-4 py-2">{{ employee.designation }}</td>
+                <td class="border px-4 py-2">{{ employee.get_gender_display }}</td>
+                <td class="border px-4 py-2">{{ employee.courses }}</td>
+                <td class="border px-4 py-2">{{ employee.hire_date|date:"d-M-y" }}</td>
+                <td class="border px-4 py-2">
+                    <a href="{% url 'employee_edit' employee.id %}" class="text-blue-500">Edit</a>-
+                    <a href="{% url 'employee_delete' employee.id %}" class="text-red-500">Delete</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="10" class="border px-4 py-2 text-center">No employees found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+

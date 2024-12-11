@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold mb-6">Create Employee</h2>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6">
+            {% csrf_token %}
+            
+            <!-- Name Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Email Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Email</label>
+                {{ form.email }}
+                {% if form.email.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.email.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Mobile Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Mobile No</label>
+                {{ form.mobile }}
+                {% if form.mobile.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.mobile.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Designation Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Designation</label>
+                {{ form.designation }}
+            </div>
+
+            <!-- Gender Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Gender</label>
+                <div class="space-x-4">
+                    {{ form.gender }}
+                </div>
+            </div>
+
+            <!-- Course Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Course</label>
+                <div class="space-y-2">
+                    {{ form.courses }}
+                </div>
+            </div>
+
+            <!-- Image Upload Field -->
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">Image Upload</label>
+                {{ form.image }}
+                {% if form.image.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ form.image.errors.0 }}</p>
+                {% endif %}
+            </div>
+
+            <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition duration-200">
+                Submit
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %} 

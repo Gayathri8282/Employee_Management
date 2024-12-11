@@ -1,0 +1,154 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mx-auto px-6 py-8">
+    <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-md p-6">
+        <h2 class="text-2xl font-bold mb-6">Create Employee</h2>
+
+        <form method="post" enctype="multipart/form-data" class="space-y-6" id="employeeForm" onsubmit="return validateForm()">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group">
+                <label class="block text-gray-700 mb-2">{{ field.label }}</label>
+                {{ field }}
+                <span class="error-message text-red-500 text-sm hidden"></span>
+                {% if field.errors %}
+                    <p class="text-red-500 text-sm mt-1">{{ field.errors.0 }}</p>
+                {% endif %}
+            </div>
+            {% endfor %}
+
+            <div class="flex justify-end space-x-4">
+                <a href="{% url 'employee_list' %}" 
+                   class="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition duration-200">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-200">
+                    Create Employee
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script>
+    function validateForm() {
+        let isValid = true;
+        
+        // Clear previous error messages
+        $('.error-message').addClass('hidden').text('');
+
+        // Email validation
+        const email = $('input[name="email"]').val();
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            showError('email', 'Please enter a valid email address');
+            isValid = false;
+        }
+
+        // Mobile number validation
+        const mobile = $('input[name="mobile"]').val();
+        if (!/^\d{10}$/.test(mobile)) {
+            showError('mobile', 'Please enter a valid 10-digit mobile number');
+            isValid = false;
+        }
+
+        // Required fields validation
+        const requiredFields = ['name', 'designation', 'gender', 'courses', 'department', 'salary', 'hire_date', 'address'];
+        requiredFields.forEach(field => {
+            const value = $(`[name="${field}"]`).val();
+            if (!value) {
+                showError(field, 'This field is required');
+                isValid = false;
+            }
+        });
+
+        // Image validation
+        const imageInput = $('input[name="image"]')[0];
+        if (imageInput.files.length > 0) {
+            const file = imageInput.files[0];
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+            if (!validTypes.includes(file.type)) {
+                showError('image', 'Only JPG/PNG files are allowed');
+                isValid = false;
+            }
+        }
+
+        // Salary validation
+        const salary = $('input[name="salary"]').val();
+        if (isNaN(salary) || parseFloat(salary) <= 0) {
+            showError('salary', 'Please enter a valid salary amount');
+            isValid = false;
+        }
+
+        return isValid;
+    }
+
+    function showError(fieldName, message) {
+        const field = $(`[name="${fieldName}"]`);
+        const errorSpan = field.siblings('.error-message');
+        errorSpan.removeClass('hidden').text(message);
+        field.addClass('border-red-500');
+    }
+
+    // Real-time validation
+    $(document).ready(function() {
+        // Email validation on blur
+        $('input[name="email"]').blur(function() {
+            const email = $(this).val();
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(email)) {
+                showError('email', 'Please enter a valid email address');
+            } else {
+                // Check for duplicate email via AJAX
+                $.ajax({
+                    url: '{% url "check_email" %}',  // You'll need to create this URL
+                    data: { email: email },
+                    success: function(response) {
+                        if (response.exists) {
+                            showError('email', 'This email is already registered');
+                        }
+                    }
+                });
+            }
+        });
+
+        // Mobile number validation on input
+        $('input[name="mobile"]').on('input', function() {
+            const mobile = $(this).val();
+            if (!/^\d*$/.test(mobile)) {
+                $(this).val(mobile.replace(/\D/g, ''));
+            }
+        });
+
+        // Image type validation on change
+        $('input[name="image"]').change(function() {
+            const file = this.files[0];
+            if (file) {
+                const validTypes = ['image/jpeg', 'image/jpg', 'image/png'];
+                if (!validTypes.includes(file.type)) {
+                    showError('image', 'Only JPG/PNG files are allowed');
+                    this.value = '';
+                }
+            }
+        });
+
+        document.querySelector('input[name="mobile"]').addEventListener('input', function(e) {
+            // Remove any non-digit characters
+            this.value = this.value.replace(/\D/g, '');
+            
+            // Limit to 10 digits
+            if (this.value.length > 10) {
+                this.value = this.value.slice(0, 10);
+            }
+        });
+    });
+</script>
+{% endblock %} 
