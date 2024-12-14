@@ -25,10 +25,9 @@ def redirect_to_dashboard(request):
     return redirect('dashboard')
 
 urlpatterns = [
-    path('', redirect_to_dashboard, name='home'),
     path('admin/', admin.site.urls),
-    path('', include('employees.urls')),  # Include the app URLs
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
-    path('accounts/', include('django.contrib.auth.urls')),  # For login/logout
+    path('', redirect_to_dashboard, name='home'),
+    path('dashboard/', include('employees.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

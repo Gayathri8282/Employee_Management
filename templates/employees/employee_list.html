@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block content %}
 <div class="container mx-auto px-6 py-8">
@@ -42,10 +43,18 @@
         <tbody>
             {% for employee in employees %}
             <tr>
-                <td class="border px-4 py-2">{{ employee.id }}</td>
+                <td class="border px-4 py-2">{{ employee.unique_id }}</td>
                 <td class="border px-4 py-2">
-                    {% if employee.image %}
-                        <img src="{{ employee.image.url }}" alt="Employee" class="h-10 w-10">
+                    {% if employee.image and employee.image|stringformat:'s' != 'Employee' %}
+                        {% if 'http' in employee.image|stringformat:'s' or employee.image.url %}
+                            <img src="{{ employee.image.url }}" alt="Employee" class="h-20 w-20 object-cover rounded">
+                        {% elif 'employee_images' in employee.image|stringformat:'s' %}
+                            <img src="/media/{{ employee.image }}" alt="Employee" class="h-20 w-20 object-cover rounded">
+                        {% else %}
+                            <img src="/media/employee_images/{{ employee.image }}" alt="Employee" class="h-20 w-20 object-cover rounded">
+                        {% endif %}
+                    {% else %}
+                        <img src="{% static 'images/default_image.png' %}" alt="Default" class="h-20 w-20 object-cover rounded">
                     {% endif %}
                 </td>
                 <td class="border px-4 py-2">{{ employee.name }}</td>
@@ -58,8 +67,12 @@
                 <td class="border px-4 py-2">{{ employee.courses }}</td>
                 <td class="border px-4 py-2">{{ employee.hire_date|date:"d-M-y" }}</td>
                 <td class="border px-4 py-2">
-                    <a href="{% url 'employee_edit' employee.id %}" class="text-blue-500">Edit</a>-
-                    <a href="{% url 'employee_delete' employee.id %}" class="text-red-500">Delete</a>
+                    <a href="{% url 'employee_edit' employee.unique_id %}" class="text-blue-500 hover:text-blue-700 mr-2">Edit</a>
+                    <a href="{% url 'employee_delete' employee.unique_id %}" 
+                       class="text-red-500 hover:text-red-700"
+                       onclick="return confirm('Are you sure you want to delete this employee?')">
+                        Delete
+                    </a>
                 </td>
             </tr>
             {% empty %}

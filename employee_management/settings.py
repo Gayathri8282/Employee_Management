@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'tailwind',
     'theme',
     'ems',
+    'mongoengine',
 ]
 
 MIDDLEWARE = [
@@ -80,10 +81,11 @@ WSGI_APPLICATION = 'employee_management.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
+        'ENGINE': 'django.db.backends.sqlite3',  # Using SQLite for Django's session/auth
         'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
+
 LOGIN_REDIRECT_URL = 'dashboard'
 LOGIN_URL = 'login'
 LOGOUT_REDIRECT_URL = 'login'
@@ -124,7 +126,10 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'ems/static')
+]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
@@ -134,3 +139,18 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Media files configuration
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Make sure the employee_images directory exists
+os.makedirs(os.path.join(MEDIA_ROOT, 'employee_images'), exist_ok=True)
+
+import mongoengine
+
+# Connect to MongoDB
+mongoengine.disconnect()
+mongoengine.connect(
+    db='advanced_employee_management',
+    host='mongodb://localhost:27017'
+)
+
+# Session Settings
+SESSION_ENGINE = 'django.contrib.sessions.backends.db'

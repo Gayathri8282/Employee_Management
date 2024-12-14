@@ -2,10 +2,13 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Avg, Q
 from .models import Employee, Department
-from .forms import EmployeeForm, UserRegistrationForm, DepartmentForm, EmployeeRegistrationForm
+from .forms import UserRegistrationForm, DepartmentForm, EmployeeRegistrationForm
 from django.contrib import messages
 from django.contrib.auth import logout, login, authenticate
 from django.http import JsonResponse
+from bson import ObjectId
+import os
+from django.conf import settings
 
 @login_required
 def dashboard(request):
@@ -20,13 +23,9 @@ def dashboard(request):
 
 @login_required
 def employee_list(request):
-    # Get the search query from the URL parameters
     search_query = request.GET.get('search', '')
-    
-    # Base queryset
     employees = Employee.objects.all().order_by('-hire_date')
-    
-    # Apply search filter if a query exists
+
     if search_query:
         employees = employees.filter(
             Q(name__icontains=search_query) |
@@ -35,7 +34,7 @@ def employee_list(request):
             Q(designation__icontains=search_query) |
             Q(courses__icontains=search_query)
         )
-    
+
     context = {
         'employees': employees,
         'search_query': search_query,
@@ -52,13 +51,14 @@ def employee_create(request):
     if request.method == 'POST':
         form = EmployeeRegistrationForm(request.POST, request.FILES)
         if form.is_valid():
-            form.save()
+            employee = form.save()
             messages.success(request, 'Employee created successfully!')
             return redirect('employee_list')
+        else:
+            messages.error(request, 'Please correct the errors below.')
     else:
         form = EmployeeRegistrationForm()
-    
-    return render(request, 'employees/employee_create.html', {'form': form})
+    return render(request, 'employees/employee_form.html', {'form': form})
 
 @login_required
 def employee_update(request, pk):
@@ -74,13 +74,28 @@ def employee_update(request, pk):
     return render(request, 'employees/employee_form.html', {'form': form, 'employee': employee})
 
 @login_required
-def employee_delete(request, pk):
-    employee = get_object_or_404(Employee, pk=pk)
-    if request.method == 'POST':
+def employee_delete(request, unique_id):
+    try:
+        employee = Employee.objects.get(unique_id=int(unique_id))
+        
+        # Delete the employee's image file if it exists
+        if employee.image:
+            image_path = os.path.join(settings.MEDIA_ROOT, str(employee.image))
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # Delete the employee record
         employee.delete()
-        messages.success(request, 'Employee deleted successfully.')
+        
+        messages.success(request, 'Employee deleted successfully!')
         return redirect('employee_list')
-    return render(request, 'employees/employee_confirm_delete.html', {'employee': employee})
+    
+    except Employee.DoesNotExist:
+        messages.error(request, 'Employee not found!')
+        return redirect('employee_list')
+    except Exception as e:
+        messages.error(request, f'An error occurred while deleting: {str(e)}')
+        return redirect('employee_list')
 
 def register(request):
     if request.method == 'POST':
@@ -113,7 +128,7 @@ def department_create(request):
 
 @login_required
 def department_edit(request, pk):
-    department = get_object_or_404(Department, pk=pk)
+    department = Department.objects.get(id=ObjectId(pk))
     if request.method == 'POST':
         form = DepartmentForm(request.POST, instance=department)
         if form.is_valid():
@@ -130,7 +145,7 @@ def department_edit(request, pk):
 
 @login_required
 def department_delete(request, pk):
-    department = get_object_or_404(Department, pk=pk)
+    department = get_object_or_404(Department, id=ObjectId(pk))
     if request.method == 'POST':
         department.delete()
         messages.success(request, 'Department deleted successfully!')
@@ -146,28 +161,63 @@ def employee_view(request, pk):
     return render(request, 'employees/employee_detail.html', {'employee': employee})
 
 @login_required
-def employee_edit(request, pk):
-    employee = get_object_or_404(Employee, pk=pk)
-    if request.method == 'POST':
-        form = EmployeeRegistrationForm(request.POST, request.FILES, instance=employee)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Employee updated successfully!')
-            return redirect('employee_list')
-    else:
-        form = EmployeeRegistrationForm(instance=employee)
-    
-    return render(request, 'employees/employee_edit.html', {
-        'form': form,
-        'employee': employee
-    })
-
-def employee_delete(request, pk):
-    employee = get_object_or_404(Employee, pk=pk)
-    if request.method == "POST":
-        employee.delete()
+def employee_edit(request, unique_id):
+    try:
+        employee = Employee.objects.get(unique_id=int(unique_id))
+        if request.method == 'POST':
+            form = EmployeeRegistrationForm(request.POST, request.FILES, instance=employee)
+            if form.is_valid():
+                form.save()
+                messages.success(request, 'Employee updated successfully!')
+                return redirect('employee_list')
+        else:
+            initial_data = {
+                'name': employee.name,
+                'email': employee.email,
+                'mobile': employee.mobile,
+                'designation': employee.designation,
+                'gender': employee.gender,
+                'courses': employee.courses,
+                'department': employee.department.id if employee.department else None,
+                'salary': employee.salary,
+                'hire_date': employee.hire_date,
+                'address': employee.address
+            }
+            form = EmployeeRegistrationForm(initial=initial_data, instance=employee)
+        return render(request, 'employees/employee_form.html', {
+            'form': form,
+            'employee': employee
+        })
+    except Employee.DoesNotExist:
+        messages.error(request, 'Employee not found!')
         return redirect('employee_list')
-    return render(request, 'employees/employee_confirm_delete.html', {'employee': employee})
+    except Exception as e:
+        messages.error(request, f'An error occurred: {str(e)}')
+        return redirect('employee_list')
+
+@login_required
+def employee_delete(request, unique_id):
+    try:
+        employee = Employee.objects.get(unique_id=int(unique_id))
+        
+        # Delete the employee's image file if it exists
+        if employee.image:
+            image_path = os.path.join(settings.MEDIA_ROOT, str(employee.image))
+            if os.path.exists(image_path):
+                os.remove(image_path)
+        
+        # Delete the employee record
+        employee.delete()
+        
+        messages.success(request, 'Employee deleted successfully!')
+        return redirect('employee_list')
+    
+    except Employee.DoesNotExist:
+        messages.error(request, 'Employee not found!')
+        return redirect('employee_list')
+    except Exception as e:
+        messages.error(request, f'An error occurred while deleting: {str(e)}')
+        return redirect('employee_list')
 
 def employee_register(request):
     if request.method == 'POST':
@@ -182,9 +232,11 @@ def employee_register(request):
     return render(request, 'employees/employee_register.html', {'form': form})
 
 def check_email(request):
-    email = request.GET.get('email', '')
-    exists = Employee.objects.filter(email=email).exists()
-    return JsonResponse({'exists': exists})
+    email = request.GET.get('email', None)
+    if email:
+        exists = Employee.objects.filter(email=email).first() is not None
+        return JsonResponse({'exists': exists})
+    return JsonResponse({'exists': False})
 
 def login_view(request):
     if request.user.is_authenticated:
