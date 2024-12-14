@@ -76,23 +76,20 @@ def employee_update(request, pk):
 @login_required
 def employee_delete(request, unique_id):
     try:
-        employee = Employee.objects.get(unique_id=int(unique_id))
-        
-        # Delete the employee's image file if it exists
+        employee = Employee.objects(unique_id=int(unique_id)).first()
+        if not employee:
+            messages.error(request, 'Employee not found!')
+            return redirect('employee_list')
+
         if employee.image:
             image_path = os.path.join(settings.MEDIA_ROOT, str(employee.image))
             if os.path.exists(image_path):
                 os.remove(image_path)
         
-        # Delete the employee record
         employee.delete()
-        
         messages.success(request, 'Employee deleted successfully!')
         return redirect('employee_list')
     
-    except Employee.DoesNotExist:
-        messages.error(request, 'Employee not found!')
-        return redirect('employee_list')
     except Exception as e:
         messages.error(request, f'An error occurred while deleting: {str(e)}')
         return redirect('employee_list')
@@ -163,7 +160,11 @@ def employee_view(request, pk):
 @login_required
 def employee_edit(request, unique_id):
     try:
-        employee = Employee.objects.get(unique_id=int(unique_id))
+        employee = Employee.objects(unique_id=int(unique_id)).first()
+        if not employee:
+            messages.error(request, 'Employee not found!')
+            return redirect('employee_list')
+
         if request.method == 'POST':
             form = EmployeeRegistrationForm(request.POST, request.FILES, instance=employee)
             if form.is_valid():
@@ -184,39 +185,14 @@ def employee_edit(request, unique_id):
                 'address': employee.address
             }
             form = EmployeeRegistrationForm(initial=initial_data, instance=employee)
+        
         return render(request, 'employees/employee_form.html', {
             'form': form,
             'employee': employee
         })
-    except Employee.DoesNotExist:
-        messages.error(request, 'Employee not found!')
-        return redirect('employee_list')
+    
     except Exception as e:
         messages.error(request, f'An error occurred: {str(e)}')
-        return redirect('employee_list')
-
-@login_required
-def employee_delete(request, unique_id):
-    try:
-        employee = Employee.objects.get(unique_id=int(unique_id))
-        
-        # Delete the employee's image file if it exists
-        if employee.image:
-            image_path = os.path.join(settings.MEDIA_ROOT, str(employee.image))
-            if os.path.exists(image_path):
-                os.remove(image_path)
-        
-        # Delete the employee record
-        employee.delete()
-        
-        messages.success(request, 'Employee deleted successfully!')
-        return redirect('employee_list')
-    
-    except Employee.DoesNotExist:
-        messages.error(request, 'Employee not found!')
-        return redirect('employee_list')
-    except Exception as e:
-        messages.error(request, f'An error occurred while deleting: {str(e)}')
         return redirect('employee_list')
 
 def employee_register(request):

@@ -81,8 +81,8 @@ WSGI_APPLICATION = 'employee_management.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Using SQLite for Django's session/auth
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': 'djongo',
+        'NAME': 'employee_db',
     }
 }
 
@@ -153,4 +153,23 @@ mongoengine.connect(
 )
 
 # Session Settings
-SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
+# Authentication backend
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+]
+
+# MongoDB connection settings
+MONGODB_DATABASES = {
+    'default': {
+        'NAME': 'employee_db',
+        'HOST': 'localhost',
+        'PORT': 27017,
+    }
+}
